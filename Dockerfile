@@ -20,6 +20,8 @@ RUN set -euxo pipefail && \
   apt-get update && \
   # Install user-land ZFS utils dependency
   apt-get install --yes --no-install-recommends zfsutils-linux && \
+  # Make zrepl executable and set up the expected directory for zrepl state
+  chmod +x /usr/bin/zrepl && \
   # zrepl expects /var/run/zrepl
   mkdir -p /var/run/zrepl && chmod 0700 /var/run/zrepl && \
   # Reduce final Docker image size: Clear the APT cache
