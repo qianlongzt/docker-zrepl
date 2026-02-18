@@ -1,5 +1,6 @@
 FROM debian:13.3-slim
 
+COPY ./bin/zrepl /usr/bin/zrepl
 RUN set -euxo pipefail && \
   DEBIAN_FRONTEND=noninteractive && \
   # Add APT repositories
@@ -19,8 +20,6 @@ RUN set -euxo pipefail && \
   apt-get update && \
   # Install user-land ZFS utils dependency
   apt-get install --yes --no-install-recommends zfsutils-linux && \
-  # copy zrepl binary to the image
-  cp ./bin/zrepl /usr/bin/zrepl && \
   # zrepl expects /var/run/zrepl
   mkdir -p /var/run/zrepl && chmod 0700 /var/run/zrepl && \
   # Reduce final Docker image size: Clear the APT cache
