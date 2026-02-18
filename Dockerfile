@@ -4,14 +4,10 @@ RUN set -euxo pipefail && \
   DEBIAN_FRONTEND=noninteractive && \
   # Add APT repositories
   apt-get update && apt-get install --yes --no-install-recommends ca-certificates curl gnupg lsb-release && \
-  # Add zrepl repo key (avoid apt-key, use signed-by instead)
-  install -d -m 0755 /usr/share/keyrings && \
-  curl -fsSL --insecure https://zrepl.cschwarz.com/apt/apt-key.asc \
-  | gpg --dearmor -o /usr/share/keyrings/zrepl-archive-keyring.gpg && \
-  # Setup zrepl package
+  # Setup zfs package
+  # https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/index.html
   . /etc/os-release && \
   ARCH="$(dpkg --print-architecture)" && \
-  echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/zrepl-archive-keyring.gpg] https://zrepl.cschwarz.com/apt/$ID $VERSION_CODENAME main" > /etc/apt/sources.list.d/zrepl.list && \
   echo "deb http://deb.debian.org/$ID stable contrib" > /etc/apt/sources.list.d/stable-contrib.list && \
   # Add Backports
   echo "deb http://deb.debian.org/debian $VERSION_CODENAME-backports main contrib non-free-firmware" >> /etc/apt/sources.list.d/backports.list && \
@@ -21,8 +17,10 @@ RUN set -euxo pipefail && \
   echo "Pin: release n=$VERSION_CODENAME-backports" >> /etc/apt/preferences.d/90_zfs && \
   echo "Pin-Priority: 990" >> /etc/apt/preferences.d/90_zfs && \
   apt-get update && \
-  # Install zrepl and its user-land ZFS utils dependency
-  apt-get install --yes --no-install-recommends zrepl zfsutils-linux && \
+  # Install user-land ZFS utils dependency
+  apt-get install --yes --no-install-recommends zfsutils-linux && \
+  # copy zrepl binary to the image
+  cp ./bin/zrepl /usr/bin/zrepl && \
   # zrepl expects /var/run/zrepl
   mkdir -p /var/run/zrepl && chmod 0700 /var/run/zrepl && \
   # Reduce final Docker image size: Clear the APT cache

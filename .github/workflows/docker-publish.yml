@@ -39,9 +39,19 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Get latest zrepl version
         run: |
-          ZREPL_VERSION=$(curl -s https://api.github.com/repos/zrepl/zrepl/releases/latest | jq -r '.tag_name')
+          # Get the latest zrepl version
+          latest_release=$(curl -s https://api.github.com/repos/zrepl/zrepl/releases/latest)
+          ZREPL_VERSION=$(echo "$latest_release" | jq -r '.tag_name')
           echo "Latest zrepl version: $ZREPL_VERSION"
           echo ZREPL_VERSION=$ZREPL_VERSION >> $GITHUB_ENV
+
+          latest_linux=$(echo "$latest_release" | jq -r '.assets.[] | select(.name | test("zrepl-linux-amd64"))')
+          downloaded_url=$(echo $latest_linux |jq .browser_download_url --raw-output)
+          echo "Latest linux amd64 download url: $downloaded_url"
+          echo ZREPL_DOWNLOAD_URL=$downloaded_url >> $GITHUB_ENV
+          digest=$(echo $latest_linux | jq .digest --raw-output)
+          echo "Latest linux amd64 hash: $digest"
+          echo ZREPL_DIGEST=$digest >> $GITHUB_ENV
       - name: Check if the image exists
         run: |
           if docker manifest inspect ghcr.io/${{ github.repository }}:${{ env.ZREPL_VERSION }}; then
@@ -51,6 +61,14 @@ jobs:
           fi
           echo "Image exists: $IMAGE_EXISTS"
           echo IMAGE_EXISTS=$IMAGE_EXISTS >> $GITHUB_ENV
+      - name: download zrepl
+        if: ${{ env.IMAGE_EXISTS == 'false' || github.event_name != 'schedule' }}
+        run: |
+          mkdir -p bin
+          curl -L -o bin/zrepl $ZREPL_DOWNLOAD_URL
+          algorithm=$(echo $ZREPL_DIGEST | cut -d ":" -f 1)
+          hash=$(echo $ZREPL_DIGEST | cut -d ":" -f 2)
+          echo "$hash  bin/zrepl" | cksum --algorithm=$algorithm --check -
 
       - name: Set up Docker Buildx
         if: ${{ env.IMAGE_EXISTS == 'false' || github.event_name != 'schedule' }}
