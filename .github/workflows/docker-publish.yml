@@ -75,6 +75,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Extract Docker metadata
+        if: ${{ env.IMAGE_EXISTS == 'false' || github.event_name != 'schedule' }}
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -91,6 +92,7 @@ jobs:
 
       - name: Build and push Docker image
         id: build-and-push
+        if: ${{ env.IMAGE_EXISTS == 'false' || github.event_name != 'schedule' }}
         uses: docker/build-push-action@v6
         with:
           context: .
